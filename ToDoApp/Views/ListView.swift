@@ -7,23 +7,44 @@
 
 import SwiftUI
 
+
+protocol addNewItemProtocol {
+    func addItem(title:String)
+}
+
+
 struct ListView: View {
 
-    @State var items: [ItemModel] = [
-    ItemModel(title: "First Item", isComplated: false),
-    ItemModel(title: "Second Item", isComplated: true),
-    ItemModel(title: "Third Item", isComplated: true),
-    ItemModel(title: "Forth Item", isComplated: false)
+    @EnvironmentObject var listViewModel: ListViewModel
     
-    ]
     
     var body: some View {
-        List{
-            ForEach(items, id: \.id) { item in
         
-                    
-                ListRowView(item: item)
+        ZStack{
+         
+            if listViewModel.items.isEmpty {
+                NoItemsView()
+                    .transition(.opacity.animation(.easeInOut))
             }
+            else {
+                List{
+                  ForEach(listViewModel.items, id: \.id) { item in
+                                ListRowView(item: item)
+                                    .transition(.move(edge: .leading))
+                                    .onTapGesture {
+                withAnimation {
+                     listViewModel.updateItem(item: item)
+                                        }
+                                    }
+                                    
+                            }
+                           
+                            .onDelete(perform: listViewModel.deleteItem)
+                            .onMove(perform: listViewModel.moveItem)
+                            
+                        }
+            }
+            
             
         }
         .navigationTitle("To Do List App 📝")
@@ -33,17 +54,40 @@ struct ListView: View {
             }
             
             ToolbarItem(placement: .topBarTrailing) {
-              NavigationLink("Add", destination: AddView())
+                NavigationLink("Add", destination: AddView(delegate:self))
 
             }
         })
         
     }
+    
+    
+    
+    
 }
+
+extension ListView: addNewItemProtocol{
+    func addItem(title: String) {
+        
+        DispatchQueue.main.asyncAfter(deadline: .now()+1) {
+       
+            withAnimation {
+                        listViewModel.addItem(title: title)}
+        }
+        
+       
+        
+    }
+    
+    
+}
+
+
 
 #Preview {
     NavigationStack{
         ListView()
-
+        
     }
+   
 }
